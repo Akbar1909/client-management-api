@@ -1,0 +1,1 @@
+export declare const filterClientVisibleKeys: (type?: "include" | "exclude", keys?: ("id" | "name" | "contactPhone" | "contactName" | "pcCount" | "serverAddress" | "hardwareId" | "notes" | "contractDueTo" | "tgGroupId" | "status" | "regDate")[]) => {};

@@ -1,0 +1,182 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int      @id @default(autoincrement())
+  username         String   @unique
+  hash             String
+  roleId           Int
+  firstName        String
+  lastName         String
+  phone            String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  refreshToken     String?
+  clients          Client[]
+  developerTickets Ticket[] @relation("developer")
+  operatorTickets  Ticket[] @relation("operator")
+  orgId            Int?  
+  org              Client?  @relation("org", fields: [orgId], references: [id], onDelete: Cascade)
+  role             Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+}
+
+model Organization{
+  organizationId Int @id @default(autoincrement())
+  clients Client[]
+  organizationName String
+  organizationNotes String
+  createdAt DateTime @default(now())
+  updatedat DateTime @updatedAt
+}
+
+model Project{
+  projectId Int @id @default(autoincrement())
+  client Client? 
+  projectName String @unique
+  hasSide Boolean @default(false)
+  hasModule Boolean @default(false)
+  hasClientStatus Boolean @default(false)
+  sides TicketSide[]
+  modules TicketType[]
+  clientStatuses ClientStatus[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id            Int          @id @default(autoincrement())
+  organization  Organization? @relation(fields: [organizationId],references: [organizationId],onDelete: Cascade)
+  organizationId Int?
+  project       Project? @relation(fields: [projectId],references: [projectId],onDelete: Cascade)
+  projectId     Int? @unique
+  name          String
+  contactName   String
+  pcCount       Int
+  hardwareId    String
+  notes         String
+  contractDueTo DateTime?   
+  tgGroupId     String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  dlpPassword   String       @default("")
+  dlpUsername   String       @default("")
+  linuxPassword String       @default("")
+  linuxUsername String       @default("")
+  contactPhone  String[]
+  serverAddress String[]
+  statusId      Int
+  createdById   Int          @default(1)
+  createdBy     User         @relation(fields: [createdById], references: [id])
+  status        ClientStatus @relation(fields: [statusId], references: [id])
+  tickets       Ticket[]
+  userId        Int?
+  user          User[]       @relation("org")
+}
+
+model Ticket {
+  id                Int          @id @default(autoincrement())
+  clientId          Int
+  operatorId        Int?
+  developerId       Int?
+  status            TicketStatus
+  telegramMessageId String
+  description       String
+  bugFixDate        DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  regDate           DateTime     @default(now())
+  side              TicketSide?  @relation(fields: [sideId],references: [id],onDelete: SetNull)
+  sideId            Int?
+  name              String       @default("")
+  prevStatus        TicketStatus
+  client            Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  developer         User?        @relation("developer", fields: [developerId], references: [id])
+  operator          User?        @relation("operator", fields: [operatorId], references: [id])
+  type              TicketType?  @relation(fields: [typeId], references: [id])
+  typeId            Int?
+  attachments       Upload[]
+}
+
+model Role {
+  id          Int          @id @default(autoincrement())
+  description String?      @default("")
+  name        String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  users       User[]
+  permissions Permission[] @relation("PermissionToRole")
+}
+
+model Permission {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  description String?  @default("")
+  label       String?  @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       Role[]   @relation("PermissionToRole")
+}
+
+model ClientStatus {
+  id          Int      @id @default(autoincrement())
+  project     Project? @relation(fields: [projectId],references: [projectId],onDelete: Cascade)
+  projectId   Int?
+  name        String   
+  description String?  @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  clients     Client[]
+  @@unique([name,projectId])
+}
+
+model Upload {
+  id           Int      @id @default(autoincrement())
+  ticketId     Int?
+  filename     String
+  originalName String
+  filePath     String
+  mimetype     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  size         Int
+  ticket       Ticket?  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+model TicketType {
+  id          Int      @id @default(autoincrement())
+  project     Project? @relation(fields: [projectId],references: [projectId],onDelete: Cascade)
+  projectId   Int?
+  name        String  
+  description String   @default("")
+  ticket      Ticket[]
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @default(now())
+  @@unique([name, projectId])
+}
+
+model TicketSide{
+  id          Int @id @default(autoincrement())
+  project     Project? @relation(fields: [projectId],references: [projectId],onDelete: Cascade)
+  projectId   Int?
+  name        String
+  ticket      Ticket[]
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @default(now())
+  @@unique([name, projectId])
+}
+
+enum TicketStatus {
+  task_done
+  bug_report
+  file_exchange
+  request
+}
+
+

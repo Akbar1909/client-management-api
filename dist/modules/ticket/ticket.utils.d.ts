@@ -1,0 +1,1 @@
+export declare const filterTicketVisibleKeys: (type?: "include" | "exclude", keys?: ("client" | "id" | "description" | "status" | "developer" | "operator" | "clientId" | "operatorId" | "developerId" | "telegramMessageId" | "bugFixDate" | "regDate" | "attachments")[]) => {};
